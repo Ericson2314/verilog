@@ -29,6 +29,7 @@ import MonadLib
 
 import Data.BitVec
 import Language.Verilog.AST
+import Language.Verilog.DSLInstances ()
 
 type Verilog a = StateT (Int, a, [ModuleItem]) Id
 
