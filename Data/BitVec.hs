@@ -5,6 +5,7 @@ module Data.BitVec
   , select
   , width
   , value
+  , dynamicBitSize
   ) where
 
 import Data.Bits
@@ -35,12 +36,20 @@ instance Bits BitVec where
   rotate _ _ = undefined --XXX  To lazy to implemented it now.
   bit i = fromInteger $ bit i
   testBit (BitVec _ v) i = testBit v i
-  bitSize (BitVec w _) = w
+  bitSizeMaybe _ = Nothing
+  -- Bote, `bitSize` is deprecated. But even if it wasn't, its docs says it
+  -- should be undefined like so.
+  bitSize = undefined
+  popCount (BitVec _ v) = popCount v
   isSigned _ = False
 
 instance Monoid BitVec where
   mempty = BitVec 0 0
   mappend (BitVec w1 v1) (BitVec w2 v2) = BitVec (w1 + w2) (shiftL v1 w2 .|. v2)
+
+-- | current number of bits used, dynamic value is not static to type
+dynamicBitSize :: BitVec -> Int
+dynamicBitSize (BitVec w _) = w
 
 -- | BitVec construction, given width and value.
 bitVec :: Int -> Integer -> BitVec
@@ -59,4 +68,3 @@ width (BitVec w _) = w
 -- | Value of a 'BitVec'.
 value :: BitVec -> Integer
 value (BitVec _ v) = v
-
