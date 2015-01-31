@@ -8,4 +8,3 @@ module Language.Verilog
 import Language.Verilog.AST
 import Language.Verilog.DSL
 import Language.Verilog.Parser
-
