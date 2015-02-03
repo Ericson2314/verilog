@@ -31,7 +31,6 @@ type PortBinding iden expr = (iden, Maybe expr)
 data Expr iden expr
   = String     String
   | Literal    (Maybe Int) Literal
-  | ConstBool  Bool
   | ExprLHS    (LHS iden expr)
   | ExprCall   (Call iden expr)
   | UniOp      UniOp expr
