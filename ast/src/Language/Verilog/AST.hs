@@ -6,36 +6,34 @@ import Control.Applicative
 import Data.Foldable
 import Data.Traversable
 
-type Identifier = String
-
-data Module expr
-  = Module Identifier [Identifier] [ModuleItem expr]
+data Module iden expr
+  = Module iden [iden] [ModuleItem iden expr]
   deriving (Eq, Show, Read, Functor, Foldable, Traversable)
 
-data ModuleItem expr
+data ModuleItem iden expr
   = Comment    String
-  | Parameter  (Maybe (Range expr)) Identifier expr
-  | Localparam (Maybe (Range expr)) Identifier expr
-  | Input      (Maybe (Range expr)) [Identifier]
-  | Output     (Maybe (Range expr)) [Identifier]
-  | Inout      (Maybe (Range expr)) [Identifier]
-  | Wire       (Maybe (Range expr)) [(Identifier, Maybe expr)]
-  | Reg        (Maybe (Range expr)) [(Identifier, Maybe (Range expr))]
-  | Integer    [Identifier]
-  | Initial    (Stmt expr)
-  | Always     (Sense expr) (Stmt expr)
-  | Assign     (LHS expr) expr
-  | Instance   Identifier [PortBinding expr] Identifier [PortBinding expr]
+  | Parameter  (Maybe (Range expr)) iden expr
+  | Localparam (Maybe (Range expr)) iden expr
+  | Input      (Maybe (Range expr)) [iden]
+  | Output     (Maybe (Range expr)) [iden]
+  | Inout      (Maybe (Range expr)) [iden]
+  | Wire       (Maybe (Range expr)) [(iden, Maybe expr)]
+  | Reg        (Maybe (Range expr)) [(iden, Maybe (Range expr))]
+  | Integer    [iden]
+  | Initial    (Stmt iden expr)
+  | Always     (Sense iden expr) (Stmt iden expr)
+  | Assign     (LHS iden expr) expr
+  | Instance   iden [PortBinding iden expr] iden [PortBinding iden expr]
   deriving (Eq, Show, Read, Functor, Foldable, Traversable)
 
-type PortBinding expr = (Identifier, Maybe expr)
+type PortBinding iden expr = (iden, Maybe expr)
 
-data Expr expr
+data Expr iden expr
   = String     String
   | Literal    (Maybe Int) Literal
   | ConstBool  Bool
-  | ExprLHS    (LHS expr)
-  | ExprCall   (Call expr)
+  | ExprLHS    (LHS iden expr)
+  | ExprCall   (Call iden expr)
   | UniOp      UniOp expr
   | BinOp      BinOp expr expr
   | Mux        expr expr expr
@@ -78,37 +76,37 @@ data BinOp
   | Ge
   deriving (Eq, Show, Read)
 
-data LHS expr
-  = LHS      Identifier
-  | LHSBit   Identifier expr
-  | LHSRange Identifier (Range expr)
+data LHS iden expr
+  = LHS      iden
+  | LHSBit   iden expr
+  | LHSRange iden (Range expr)
   deriving (Eq, Show, Read, Functor, Foldable, Traversable)
 
-data Stmt expr
-  = Block                 (Maybe Identifier) [Stmt expr]
-  | StmtReg               (Maybe (Range expr)) [(Identifier, Maybe (Range expr))]
-  | StmtInteger           [Identifier]
-  | Case                  expr [Case expr] (Maybe (Stmt expr))
-  | BlockingAssignment    (LHS expr) expr
-  | NonBlockingAssignment (LHS expr) expr
-  | For                   (Identifier, expr) expr (Identifier, expr) (Stmt expr)
-  | If                    expr (Stmt expr) (Stmt expr)
-  | StmtCall              (Call expr)
-  | Delay                 expr (Stmt expr)
+data Stmt iden expr
+  = Block                 (Maybe iden) [Stmt iden expr]
+  | StmtReg               (Maybe (Range expr)) [(iden, Maybe (Range expr))]
+  | StmtInteger           [iden]
+  | Case                  expr [Case iden expr] (Maybe (Stmt iden expr))
+  | BlockingAssignment    (LHS iden expr) expr
+  | NonBlockingAssignment (LHS iden expr) expr
+  | For                   (iden, expr) expr (iden, expr) (Stmt iden expr)
+  | If                    expr (Stmt iden expr) (Stmt iden expr)
+  | StmtCall              (Call iden expr)
+  | Delay                 expr (Stmt iden expr)
   | Null
   deriving (Eq, Show, Read, Functor, Foldable, Traversable)
 
-type Case expr = ([expr], (Stmt expr))
+type Case iden expr = ([expr], (Stmt iden expr))
 
-data Call expr
-  = Call Identifier [expr]
+data Call iden expr
+  = Call iden [expr]
   deriving (Eq, Show, Read, Functor, Foldable, Traversable)
 
-data Sense expr
-  = Sense        (LHS expr)
-  | SenseOr      (Sense expr) (Sense expr)
-  | SensePosedge (LHS expr)
-  | SenseNegedge (LHS expr)
+data Sense iden expr
+  = Sense        (LHS iden expr)
+  | SenseOr      (Sense iden expr) (Sense iden expr)
+  | SensePosedge (LHS iden expr)
+  | SenseNegedge (LHS iden expr)
   deriving (Eq, Show, Read, Functor, Foldable, Traversable)
 
 type Range expr = (expr, expr)
