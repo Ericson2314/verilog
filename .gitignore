@@ -1,11 +1,16 @@
 dist
 cabal-dev
 *.o
+*.o-boot
 *.hi
+*.hi-boot
+*.po
+*.po-boot
 *.chi
 *.chs.h
 *.dyn_o
 *.dyn_hi
+*.dyn_hi-boot
 .virtualenv
 .hpc
 .hsenv
@@ -17,3 +22,4 @@ cabal.config
 *.hp
 
 *~
+*.DS_Store
