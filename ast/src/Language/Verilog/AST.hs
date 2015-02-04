@@ -6,8 +6,8 @@ import Control.Applicative
 import Data.Foldable
 import Data.Traversable
 
-data Module iden expr
-  = Module iden [iden] [ModuleItem iden expr]
+data Module iden modItem
+  = Module iden [iden] [modItem]
   deriving (Eq, Show, Read, Functor, Foldable, Traversable)
 
 data ModuleItem iden expr
