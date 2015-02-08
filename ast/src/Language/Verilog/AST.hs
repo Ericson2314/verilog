@@ -22,7 +22,7 @@ data ModuleItem iden expr
   | Integer    [iden]
   | Initial    (Stmt iden expr)
   | Always     (Sense iden expr) (Stmt iden expr)
-  | Assign     (LHS iden expr) expr
+  | Assign     (LValue iden expr) expr
   | Instance   iden [PortBinding iden expr] iden [PortBinding iden expr]
   deriving (Eq, Show, Read, Functor, Foldable, Traversable)
 
@@ -31,18 +31,23 @@ type PortBinding iden expr = (iden, Maybe expr)
 data Expr iden expr
   = String     String
   | Literal    (Maybe Int) Literal
-  | ExprLHS    (LHS iden expr)
   | ExprCall   (Call iden expr)
   | UniOp      UniOp expr
   | BinOp      BinOp expr expr
   | Mux        expr expr expr
-  | Bit        expr Int
   | Repeat     expr [expr]
-  | Concat     [expr]
+  | LValue     (LValue iden expr)
+  deriving (Eq, Show, Read, Functor, Foldable, Traversable)
+
+data LValue iden expr
+  = Identifier iden
+  | Concat     [expr] -- Shouldn't be expr, but that is what the standards stupidly say
+  | Bit        iden expr
+  | Range      iden (Range expr)
   deriving (Eq, Show, Read, Functor, Foldable, Traversable)
 
 data Literal
-  = Number (Maybe Integer)
+  = Number Integer
   | HighImpedence
   | Undefined
   deriving (Eq, Show, Read)
@@ -75,19 +80,13 @@ data BinOp
   | Ge
   deriving (Eq, Show, Read)
 
-data LHS iden expr
-  = LHS      iden
-  | LHSBit   iden expr
-  | LHSRange iden (Range expr)
-  deriving (Eq, Show, Read, Functor, Foldable, Traversable)
-
 data Stmt iden expr
   = Block                 (Maybe iden) [Stmt iden expr]
   | StmtReg               (Maybe (Range expr)) [(iden, Maybe (Range expr))]
   | StmtInteger           [iden]
   | Case                  expr [Case iden expr] (Maybe (Stmt iden expr))
-  | BlockingAssignment    (LHS iden expr) expr
-  | NonBlockingAssignment (LHS iden expr) expr
+  | BlockingAssignment    (LValue iden expr) expr
+  | NonBlockingAssignment (LValue iden expr) expr
   | For                   (iden, expr) expr (iden, expr) (Stmt iden expr)
   | If                    expr (Stmt iden expr) (Stmt iden expr)
   | StmtCall              (Call iden expr)
@@ -102,10 +101,10 @@ data Call iden expr
   deriving (Eq, Show, Read, Functor, Foldable, Traversable)
 
 data Sense iden expr
-  = Sense        (LHS iden expr)
+  = Sense        (LValue iden expr)
   | SenseOr      (Sense iden expr) (Sense iden expr)
-  | SensePosedge (LHS iden expr)
-  | SenseNegedge (LHS iden expr)
+  | SensePosedge (LValue iden expr)
+  | SenseNegedge (LValue iden expr)
   deriving (Eq, Show, Read, Functor, Foldable, Traversable)
 
 type Range expr = (expr, expr)

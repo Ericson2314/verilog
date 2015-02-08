@@ -59,6 +59,31 @@ instance forall iden expr. (PrettyPrint iden, PrettyPrint expr) => PrettyPrint (
         showAssign :: Maybe expr -> Doc
         showAssign a = opt $ ("=" <+>) <$> pp <$> a
 
+instance (PrettyPrint iden, PrettyPrint expr) => PrettyPrint (Expr iden expr) where
+  pp = \case
+    String str            -> showAdapt str
+    Literal mSize lit     -> (opt $ (<> "'") <$> showAdapt <$> mSize) <> pp lit
+    ExprCall call         -> pp call
+    UniOp op exp          -> parens $ pp op <+> pp exp
+    BinOp left op right   -> sexp [pp left, pp op, pp right]
+    Mux cond true false   -> sexp [pp cond, "?", pp true, ":", pp false]
+    Repeat count es       -> braces $ pp count <+> encloseSep lbrace rbrace comma (pp <$> es)
+    LValue lvalue         -> pp lvalue
+    where sexp = encloseSep lparen rparen space
+
+instance (PrettyPrint iden, PrettyPrint expr) => PrettyPrint (LValue iden expr) where
+  pp = \case
+    Identifier ident     -> pp ident
+    Concat exprs         -> encloseSep lbrace rbrace comma $ pp <$> exprs
+    Bit ident bit        -> pp ident <> (brackets $ pp bit)
+    Range ident (hi, lo) -> pp ident <> (brackets $ hsep [pp hi, ":", pp lo])
+
+instance PrettyPrint Literal where
+  pp = \case
+    Number n -> showAdapt n
+    HighImpedence -> "Z"
+    Undefined     -> "X"
+
 instance PrettyPrint UniOp where
   pp = \case
     Not   -> "!"
@@ -86,32 +111,6 @@ instance PrettyPrint BinOp where
     Le     -> "<="
     Gt     -> ">"
     Ge     -> ">="
-
-instance (PrettyPrint iden, PrettyPrint expr) => PrettyPrint (Expr iden expr) where
-  pp = \case
-    String str            -> showAdapt str
-    Literal mSize lit     -> (opt $ (<> "'") <$> showAdapt <$> mSize) <> pp lit
-    ExprLHS lval          -> pp lval
-    ExprCall call         -> pp call
-    UniOp op exp          -> parens $ pp op <+> pp exp
-    BinOp left op right   -> sexp [pp left, pp op, pp right]
-    Mux cond true false   -> sexp [pp cond, "?", pp true, ":", pp false]
-    Bit exp ind           -> parens $ pp exp <+> "[" <> showAdapt ind <> "]"
-    Repeat count es       -> braces $ pp count <+> encloseSep lbrace rbrace comma (pp <$> es)
-    Concat a              -> encloseSep lbrace rbrace comma  $ pp <$> a
-    where sexp = encloseSep lparen rparen space
-
-instance PrettyPrint Literal where
-  pp = \case
-    Number n -> showAdapt n
-    HighImpedence -> "Z"
-    Undefined     -> "X"
-
-instance (PrettyPrint iden, PrettyPrint expr) => PrettyPrint (LHS iden expr) where
-  pp = \case
-    LHS        ident        -> pp ident
-    LHSBit     exp bit      -> pp exp <> (brackets $ pp bit)
-    LHSRange   exp (hi, lo) -> pp exp <> (brackets $ hsep [pp hi, ":", pp lo])
 
 instance (PrettyPrint iden, PrettyPrint expr) => PrettyPrint (Stmt iden expr) where
   pp = \case
