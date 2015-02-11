@@ -6,7 +6,7 @@ import Control.Applicative
 import Data.Foldable
 import Data.Traversable
 
-type TopLevel iden modItem = Either (Module iden modItem) (TypeDef iden)
+type TopLevel iden modItem = Either (Module iden modItem) (NominalType iden)
 
 data Module iden modItem
   = Module iden [(Direction, Decl iden)] [modItem]
@@ -30,8 +30,10 @@ data Type iden
   | Nominal iden
   deriving (Eq, Show, Read, Functor, Foldable, Traversable)
 
-data TypeDef iden
-  = Struct [Decl iden] iden
+data NominalType iden
+  = Struct  (Maybe iden) [Decl iden]
+  | Enum    (Maybe iden) (Maybe Int) [iden]
+  | TypeDef (NominalType iden) iden
   deriving (Eq, Show, Read, Functor, Foldable, Traversable)
 
 data ModuleItem iden expr
@@ -49,14 +51,15 @@ data ModuleItem iden expr
 type PortBinding iden expr = (iden, Maybe expr)
 
 data Expr iden expr
-  = String     String
-  | Literal    (Maybe Int) Literal
+  = LValue     (LValue iden expr)
+  | Literal    (Maybe Int) SizedLiteral
+  | String     String
+  | StructLit  (Maybe iden) [(iden, Expr iden expr)]
   | ExprCall   (Call iden expr)
   | UniOp      UniOp expr
   | BinOp      BinOp expr expr
   | Mux        expr expr expr
   | Repeat     expr [expr]
-  | LValue     (LValue iden expr)
   deriving (Eq, Show, Read, Functor, Foldable, Traversable)
 
 data LValue iden expr
@@ -66,7 +69,7 @@ data LValue iden expr
   | SubRange   iden (Range expr)
   deriving (Eq, Show, Read, Functor, Foldable, Traversable)
 
-data Literal
+data SizedLiteral
   = Number Integer
   | HighImpedence
   | Undefined

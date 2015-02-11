@@ -85,20 +85,31 @@ instance forall iden expr. (PrettyPrint iden, PrettyPrint expr) => PrettyPrint (
         showAssign :: Maybe expr -> Doc
         showAssign a = opt $ ("=" <+>) <$> pp <$> a
 
-instance PrettyPrint iden => PrettyPrint (TypeDef iden) where
-  pp (Struct decls name) = "typedef struct packed" <%> decls' <%> pp name <> ";"
-    where decls' = semiBraces $ pp <$> decls
+instance PrettyPrint iden => PrettyPrint (NominalType iden) where
+  pp = \case
+    Struct mname decls -> "struct packed" <+> (opt $ pp <$> mname) <%> decls' -- <> ";"
+      where decls' = semiBraces $ pp <$> decls
+
+    Enum mnane msize ctors -> "enum" <+> msize' <%> ctors'
+      where msize' = opt $ ("bits"<>) <$> (\x -> pp $ Range x 0) <$> msize
+            ctors' = encloseSep "{" "}" "," $ pp <$> ctors
+
+    TypeDef nominal name -> "typedef" <+> pp nominal <%> pp name
 
 instance (PrettyPrint iden, PrettyPrint expr) => PrettyPrint (Expr iden expr) where
   pp = \case
-    String str            -> showAdapt str
+    LValue lvalue         -> pp lvalue
     Literal mSize lit     -> (opt $ (<> "'") <$> showAdapt <$> mSize) <> pp lit
+    String str            -> showAdapt str
+
+    StructLit mTName flds -> "'" <> (opt $ pp <$> mTName) <> flds'
+      where flds' = encloseSep "{" "}" "," $ (\(f, e) -> pp f <> ":" <+> pp e) <$> flds
+
     ExprCall call         -> pp call
     UniOp op exp          -> parens $ pp op <+> pp exp
     BinOp left op right   -> sexp [pp left, pp op, pp right]
     Mux cond true false   -> sexp [pp cond, "?", pp true, ":", pp false]
     Repeat count es       -> braces $ pp count <+> encloseSep lbrace rbrace comma (pp <$> es)
-    LValue lvalue         -> pp lvalue
     where sexp = encloseSep lparen rparen space
 
 instance (PrettyPrint iden, PrettyPrint expr) => PrettyPrint (LValue iden expr) where
@@ -108,9 +119,9 @@ instance (PrettyPrint iden, PrettyPrint expr) => PrettyPrint (LValue iden expr) 
     Bit ident bit        -> pp ident <> (brackets $ pp bit)
     SubRange ident range -> pp ident <> pp range
 
-instance PrettyPrint Literal where
+instance PrettyPrint SizedLiteral where
   pp = \case
-    Number n -> showAdapt n
+    Number n -> "d" <> showAdapt n
     HighImpedence -> "Z"
     Undefined     -> "X"
 
