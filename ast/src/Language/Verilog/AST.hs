@@ -6,19 +6,39 @@ import Control.Applicative
 import Data.Foldable
 import Data.Traversable
 
+type TopLevel iden modItem = Either (Module iden modItem) (TypeDef iden)
+
 data Module iden modItem
-  = Module iden [iden] [modItem]
+  = Module iden [(Direction, Decl iden)] [modItem]
+  deriving (Eq, Show, Read, Functor, Foldable, Traversable)
+
+data Direction
+  = Input
+  | Output
+  | Inout
+  deriving (Eq, Show, Read)
+
+data Decl iden
+  = Decl (Type iden) iden
+  deriving (Eq, Show, Read, Functor, Foldable, Traversable)
+
+data Type iden
+  = UnpackedArray (Type iden) Int
+  | Wire  Int
+  | Reg   Int
+  | Logic Int
+  | Nominal iden
+  deriving (Eq, Show, Read, Functor, Foldable, Traversable)
+
+data TypeDef iden
+  = Struct [Decl iden] iden
   deriving (Eq, Show, Read, Functor, Foldable, Traversable)
 
 data ModuleItem iden expr
   = Comment    String
+  | LocalNet   (Decl iden)
   | Parameter  (Maybe (Range expr)) iden expr
   | Localparam (Maybe (Range expr)) iden expr
-  | Input      (Maybe (Range expr)) [iden]
-  | Output     (Maybe (Range expr)) [iden]
-  | Inout      (Maybe (Range expr)) [iden]
-  | Wire       (Maybe (Range expr)) [(iden, Maybe expr)]
-  | Reg        (Maybe (Range expr)) [(iden, Maybe (Range expr))]
   | Integer    [iden]
   | Initial    (Stmt iden expr)
   | Always     (Sense iden expr) (Stmt iden expr)
@@ -43,7 +63,7 @@ data LValue iden expr
   = Identifier iden
   | Concat     [expr] -- Shouldn't be expr, but that is what the standards stupidly say
   | Bit        iden expr
-  | Range      iden (Range expr)
+  | SubRange   iden (Range expr)
   deriving (Eq, Show, Read, Functor, Foldable, Traversable)
 
 data Literal
@@ -107,4 +127,6 @@ data Sense iden expr
   | SenseNegedge (LValue iden expr)
   deriving (Eq, Show, Read, Functor, Foldable, Traversable)
 
-type Range expr = (expr, expr)
+data Range x
+  = Range x x
+  deriving (Eq, Show, Read, Functor, Foldable, Traversable)
