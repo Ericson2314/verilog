@@ -111,7 +111,6 @@ data Stmt iden expr
   | If                    expr (Stmt iden expr) (Stmt iden expr)
   | StmtCall              (Call iden expr)
   | Delay                 expr (Stmt iden expr)
-  | Null
   deriving (Eq, Show, Read, Functor, Foldable, Traversable)
 
 type Case iden expr = ([expr], (Stmt iden expr))
