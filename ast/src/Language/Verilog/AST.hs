@@ -6,7 +6,7 @@ import Control.Applicative
 import Data.Foldable
 import Data.Traversable
 
-type TopLevel iden modItem = Either (Module iden modItem) (NominalType iden)
+type TopLevel iden modItem = Either (Module iden modItem) (TypeDef iden)
 
 data Module iden modItem
   = Module iden [(Direction, Decl iden)] [modItem]
@@ -30,10 +30,9 @@ data Type iden
   | Nominal iden
   deriving (Eq, Show, Read, Functor, Foldable, Traversable)
 
-data NominalType iden
-  = Struct  (Maybe iden) [Decl iden]
-  | Enum    (Maybe iden) (Maybe Int) [iden]
-  | TypeDef (NominalType iden) iden
+data TypeDef iden
+  = Struct  iden [Decl iden]
+  | Enum    iden (Maybe Int) [iden]
   deriving (Eq, Show, Read, Functor, Foldable, Traversable)
 
 data ModuleItem iden expr

@@ -26,9 +26,11 @@ opt = fromMaybe mempty
 
 (<%>) = (Text.PrettyPrint.Leijen.Text.<$>)
 
+commas = encloseSep mempty mempty comma
+ppRange range = opt $ pp <$> range
 
-ppTuple :: (PrettyPrint x, PrettyPrint y) => (x, y) -> Doc
-ppTuple (x, y) = pp x <+> pp y
+ppPair :: (PrettyPrint x, PrettyPrint y) => (x, y) -> Doc
+ppPair (x, y) = pp x <+> pp y
 
 -- TODO orphan instances
 instance PrettyPrint Int where
@@ -42,7 +44,7 @@ instance (PrettyPrint iden, PrettyPrint modItem) => PrettyPrint (Module iden mod
                                       ]
     where ports' = if null ports
                    then ""
-                   else tupled $ ppTuple <$> ports
+                   else tupled $ ppPair <$> ports
 
 instance PrettyPrint Direction where
   pp = \case
@@ -85,16 +87,14 @@ instance forall iden expr. (PrettyPrint iden, PrettyPrint expr) => PrettyPrint (
         showAssign :: Maybe expr -> Doc
         showAssign a = opt $ ("=" <+>) <$> pp <$> a
 
-instance PrettyPrint iden => PrettyPrint (NominalType iden) where
+instance PrettyPrint iden => PrettyPrint (TypeDef iden) where
   pp = \case
-    Struct mname decls -> "struct packed" <+> (opt $ pp <$> mname) <%> decls' -- <> ";"
+    Struct name decls -> "typedef" <> "struct" <> "packed" <%> decls' <%> pp name <> ";"
       where decls' = semiBraces $ pp <$> decls
 
-    Enum mnane msize ctors -> "enum" <+> msize' <%> ctors'
+    Enum name msize ctors -> "typedef" <> "enum" <+> msize' <%> ctors' <%> pp name <> ";"
       where msize' = opt $ ("bits"<>) <$> (\x -> pp $ Range x 0) <$> msize
             ctors' = encloseSep "{" "}" "," $ pp <$> ctors
-
-    TypeDef nominal name -> "typedef" <+> pp nominal <%> pp name
 
 instance (PrettyPrint iden, PrettyPrint expr) => PrettyPrint (Expr iden expr) where
   pp = \case
@@ -168,6 +168,8 @@ instance (PrettyPrint iden, PrettyPrint expr) => PrettyPrint (Stmt iden expr) wh
                                       , "endcase"
                                       ]
       where defaultCase' = opt $ ("default:" <+>) <$> pp <$> defaultCase
+            ppCase :: (PrettyPrint iden, PrettyPrint expr) => Case iden expr -> Doc
+            ppCase (a, b) = commas (pp <$> a) <+> ":" <+> pp b
 
     BlockingAssignment    a b -> pp a <+> "=" <+> pp b <> ";"
     NonBlockingAssignment a b -> pp a <+> "<=" <+> pp b <> ";"
@@ -184,17 +186,8 @@ instance (PrettyPrint iden, PrettyPrint expr) => PrettyPrint (Stmt iden expr) wh
     StmtCall call             -> pp call
     Delay a b                 -> "#" <> pp a <+> pp b
 
-commas = encloseSep mempty mempty comma
-
-
-
 instance PrettyPrint x => PrettyPrint (Range x) where
   pp (Range hi lo) = brackets $ pp hi <> ":" <> pp lo
-
-ppRange range = opt $ pp <$> range
-
-ppCase :: (PrettyPrint iden, PrettyPrint expr) => Case iden expr -> Doc
-ppCase (a, b) = commas (pp <$> a) <+> ":" <+> pp b
 
 instance (PrettyPrint iden, PrettyPrint expr) => PrettyPrint (Call iden expr) where
   pp (Call fun args) = pp fun <> tupled (pp <$> args)
